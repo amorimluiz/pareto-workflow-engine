@@ -1,5 +1,6 @@
 import type { Job } from 'pg-boss';
 import { pool } from '../db/index.js';
+import { executePipelines } from '../engine/executor.js';
 import { PIPELINE_QUEUE, startQueue } from './pgboss.js';
 
 interface PipelineJobData {
@@ -8,20 +9,25 @@ interface PipelineJobData {
 
 const WORK_OPTIONS = {
   localConcurrency: 5,
-  batchSize: 2,
+  batchSize: 100,
+  burstWhenBatchFull: true,
+  notifyPollingIntervalSeconds: 5,
 } as const;
 
 async function handlePipelineJobs(jobs: Job<PipelineJobData>[]): Promise<void> {
-  for (const job of jobs) {
-    const { pipelineId } = job.data;
+  const pipelineIds = jobs.map((job) => job.data.pipelineId);
+  const client = await pool.connect();
 
-    try {
-      await pool.query('UPDATE pipelines SET status = $1 WHERE id = $2', ['RUNNING', pipelineId]);
-      await pool.query('UPDATE pipelines SET status = $1 WHERE id = $2', ['COMPLETED', pipelineId]);
-    } catch (error) {
-      console.error(`[worker] Falha no job ${job.id} (pipeline ${pipelineId}):`, error);
-      throw error;
-    }
+  try {
+    await client.query('BEGIN');
+    await executePipelines(client, pipelineIds);
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error(`[worker] Falha ao processar lote de ${pipelineIds.length} pipelines:`, error);
+    throw error;
+  } finally {
+    client.release();
   }
 }
 
