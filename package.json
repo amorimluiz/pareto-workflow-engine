@@ -1,0 +1,31 @@
+{
+  "name": "pareto-workflow-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Boilerplate do motor de execucao de workflows do desafio Pareto",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "e2e": "tsx src/e2e.ts",
+    "typecheck": "tsc --noEmit",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "db:init": "tsx src/db/init.ts",
+    "seed:dataset": "tsx src/scripts/seed.ts"
+  },
+  "dependencies": {
+    "pg": "^8.23.0",
+    "pg-boss": "^12.35.0",
+    "pg-copy-streams": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "@types/pg": "^8.23.1",
+    "@types/pg-copy-streams": "^1.2.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
