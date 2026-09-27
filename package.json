@@ -14,7 +14,8 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "db:init": "tsx src/db/init.ts",
-    "seed:dataset": "tsx src/scripts/seed.ts"
+    "seed:dataset": "tsx src/scripts/seed.ts",
+    "ingest": "tsx src/scripts/ingest.ts"
   },
   "dependencies": {
     "pg": "^8.23.0",
