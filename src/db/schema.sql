@@ -34,3 +34,25 @@ CREATE INDEX IF NOT EXISTS idx_jobs_pipeline_id ON jobs (pipeline_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status);
 CREATE INDEX IF NOT EXISTS idx_executions_job_id ON executions (job_id);
 CREATE INDEX IF NOT EXISTS idx_executions_status ON executions (status);
+
+-- Transactional outbox: notifica a criacao de pipelines via LISTEN/NOTIFY.
+CREATE OR REPLACE FUNCTION notify_pipeline_created()
+RETURNS TRIGGER AS $$
+BEGIN
+  PERFORM pg_notify(
+    'pipeline_created',
+    json_build_object(
+      'id', NEW.id,
+      'scheduled_at', NEW.scheduled_at
+    )::text
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_pipeline_created ON pipelines;
+
+CREATE TRIGGER trg_pipeline_created
+AFTER INSERT ON pipelines
+FOR EACH ROW
+EXECUTE FUNCTION notify_pipeline_created();
